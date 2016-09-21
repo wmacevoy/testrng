@@ -48,13 +48,15 @@ enum DoubleIndexes {
   DINLuck,
   DILnP,
   DIDF,
+  DIMean,
+  DIVariance,
 };
 
 enum StringIndexes {
   SIName = 0x10000,
   SIConfig,
   SIResults,
-  SIEnd
+  SIEnd,
 };
 
 
@@ -79,44 +81,6 @@ static void stats_max64_config(stats_t *me, const char *args) {
       me->set_double(me,di,atof(value));
       continue;
     }
-  }
-}
-
-static double value(stats_t *me) {
-  int bits = get_bits(me);
-  return (~((ME->max+1) << (64-bits))+1)/pow(2,64);
-}
-
-static double lnp(stats_t *me) {
-  if (ME->value != NAN) {
-    int bits = get_bits(me);
-    uint64_t Nm1 =  (~((uint64_t)0)) >> (64-bits);
-    uint64_t i = Nm1-(ME->max);
-    double N = pow(2,bits);
-    int S = ME->samples;
-    double a=log(-expm1(S*log1p(-(1/(N-i)))));
-    double b=S*log1p(-(i/N)); // !!! -i/N != -(i/N) !!!
-    return a+b;
-  } else {
-    return NAN;
-  }
-}
-
-static double luck(stats_t *me) {
-  int bits = get_bits(me);
-  double N = pow(2,bits);
-  int S = ME->samples;
-  double M = ME->max + 1;
-  double k = N-M;
-
-  if (k <= 1e6) {
-      double ans = 0.5*pow(M/N,S)*(1-pow((M-1)/M,S));
-      while (--k >= 0) {
-        ans += pow((N-k)/N,S)*(1-pow((N-k-1)/(N-k),S));
-      }
-      return ans;
-  } else {
-    return 1-exp(-(S/N)*(k+0.5));
   }
 }
 
@@ -160,26 +124,68 @@ static void moments(stats_t *me) {
   }
 }
 
+static double value(stats_t *me) {
+  int bits = get_bits(me);
+  return (~((ME->max+1) << (64-bits))+1)/pow(2,64);
+}
+
+static double mean(stats_t *me) {
+  moments(me);
+  return ME->mu;
+}
+
+static double variance(stats_t *me) {
+  moments(me);
+  return pow(ME->sigma,2);
+}
+
+static double lnp(stats_t *me) {
+  if (isnan(ME->value)) return NAN;
+
+  int bits = get_bits(me);
+  uint64_t Nm1 =  (~((uint64_t)0)) >> (64-bits);
+  uint64_t i = Nm1-(ME->max);
+  double N = pow(2,bits);
+  int S = ME->samples;
+  double a=log(-expm1(S*log1p(-(1/(N-i)))));
+  double b=S*log1p(-(i/N)); // !!! -i/N != -(i/N) !!!
+  return a+b;
+}
+
+static double luck(stats_t *me) {
+  int bits = get_bits(me);
+  double N = pow(2,bits);
+  int S = ME->samples;
+  double M = ME->max + 1;
+  double k = N-M;
+
+  if (k <= 1e6) {
+      double ans = 0.5*pow(M/N,S)*(1-pow((M-1)/M,S));
+      while (--k >= 0) {
+        ans += pow((N-k)/N,S)*(1-pow((N-k-1)/(N-k),S));
+      }
+      return ans;
+  } else {
+    return 1-exp(-(S/N)*(k+0.5));
+  }
+}
+
+
 static double df(stats_t *me) {
   return 1;
 }
 
 static double zluck(stats_t *me) {
-  if (ME->value != NAN) {
-    moments(me);
-    double x = value(me);
-    return (x-ME->mu)/ME->sigma-sqrt(df(me)-0.5);
-  } else {
-    return NAN;
-  }
+  if (isnan(ME->value)) return NAN;
+
+  moments(me);
+  double x = value(me);
+  return (x-ME->mu)/ME->sigma-sqrt(df(me)-0.5);
 }
 
 static double nluck(stats_t *me) {
-  if (ME->value != NAN) {
-    return 0.5*(1+erf(zluck(me)));
-  } else {
-    return NAN;
-  }
+  if (isnan(ME->value)) return NAN;
+  return 0.5*(1+erf(zluck(me)));
 }
 
 static int stats_max64_get_double_index(stats_t *me, const char *name) {
@@ -196,6 +202,8 @@ static int stats_max64_get_double_index(stats_t *me, const char *name) {
   if (strcmp(name,"nluck")==0) { return DINLuck; }
   if (strcmp(name,"df")==0) { return DIDF; }
   if (strcmp(name,"lnp")==0) { return DILnP; }
+  if (strcmp(name,"mean")==0) { return DIMean; }
+  if (strcmp(name,"variance")==0) { return DIVariance; }
   return -1;
 }
 
@@ -215,19 +223,21 @@ static double stats_max64_get_double(stats_t *me, int index) {
   case DISkip1: return ME->skip1;
   case DIOffset: return ME->offset;
   case DISamples: return ME->samples;
-  case DIMax: return ME->max;
+  case DIMax: return isnan(ME->value) ? NAN : ME->max;
   case DIValue: return ME->value;
   case DILuck: return luck(me);
   case DIZLuck: return zluck(me);
   case DINLuck: return nluck(me);
   case DIDF: return df(me);
   case DILnP: return lnp(me);
+  case DIMean: return mean(me);
+  case DIVariance: return variance(me);
   }
   return NAN;
 }
 
 static int stats_max64_set_double(stats_t *me, int index, double value) {
-  ME->changed=1;
+  ME->changed=1;  
   switch(index) {
   case DIUse0: ME->use0=value; return 1;
   case DIUse1: ME->use1=value; return 1;
@@ -235,6 +245,22 @@ static int stats_max64_set_double(stats_t *me, int index, double value) {
   case DISkip1: ME->skip1=value; return 1;
   case DIOffset: ME->offset=value; return 1;
   case DISamples: ME->samples=value; return 1;
+  case DIValue: 
+    {
+      if (isnan(value)) { 
+        ME->value = NAN;
+      } else {
+        int bits = get_bits(me);
+        uint64_t Nm1 =  (~((uint64_t)0)) >> (64-bits);
+        
+        if (value < 0) value = 0;
+        if (value > 1) value = 1;
+        
+        ME->value = value;
+        ME->max = rint(Nm1-pow(2,bits)*value);
+      }
+      return 1;
+    }
   }
   return 0;
 }
@@ -269,14 +295,15 @@ static char *results(stats_t *me) {
   moments(me);
 
   snprintf(tmp,sizeof(tmp),
-           "mu=%lg sigma=%lg"
-           " value=%lg lnp=%lg zluck=%lg nluck=%lg df=%lf luck=%lg",
-           ME->mu,ME->sigma,
+           "mean=%lg variance=%lg df=%lf"
+           " value=%lg lnp=%lg zluck=%lg nluck=%lg luck=%lg",
+           me->get_double(me,DIMean),
+           me->get_double(me,DIVariance),
+           me->get_double(me,DIDF),
            me->get_double(me,DIValue),
            me->get_double(me,DILnP),
            me->get_double(me,DIZLuck),
            me->get_double(me,DINLuck),
-           me->get_double(me,DIDF),
            me->get_double(me,DILuck));
 
   return strdup(tmp);

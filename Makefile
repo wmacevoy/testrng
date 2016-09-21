@@ -4,7 +4,7 @@ all : libs bins
 
 libs : lib/libstats_max64.so
 
-bins : bin/test_reader bin/test_bits bin/testrng
+bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64
 
 tmp/path_to_self.o : src/path_to_self.c include/path_to_self.h
 	$(CC) -c -o $@ $(CFLAGS) $<
