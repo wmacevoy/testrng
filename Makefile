@@ -58,3 +58,6 @@ tmp/rng_rdrand.o : src/rng_rdrand.c include/rng_rdrand.h include/reader.h
 
 bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/path_to_self.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
+run : bin/testrng
+	bin/testrng --rng /dev/urandom --stats max64

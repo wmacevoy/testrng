@@ -62,14 +62,17 @@ int main(int argc, char *argv[])
   }
 
   stats_run(stats,rng);
-  char *name = stats_get_string(stats,
-                                stats_get_string_index(stats,"name"));
-  char *summary = stats_get_string(stats,
-                                   stats_get_string_index(stats,"summary"));
-
-  printf("%s[%s](%s)=%s\n",name,stats_config,rng_config,summary);
+  char *name = stats_get_string_by_name(stats,"name");
+  char *config = stats_get_string_by_name(stats,"config");
+  char *results = stats_get_string_by_name(stats,"results");
+  printf("`testrng --rng %s --stats \"%s %s\"` = \"%s\"\n",rng_config,name,config,results);
+  printf("luck=%lf\n",stats_get_double_by_name(stats,"luck"));
+  printf("zluck=%lf\n",stats_get_double_by_name(stats,"zluck"));
+  printf("nluck=%lf\n",stats_get_double_by_name(stats,"nluck"));
+  printf("df=%lf\n",stats_get_double_by_name(stats,"df"));
   free(name);
-  free(summary);
+  free(config);
+  free(results);
 
   return 0;
 }
