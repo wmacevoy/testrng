@@ -26,27 +26,13 @@ typedef struct stats_max64 {
 
 #define ME ((stats_max64_t*)(me))
 
-static inline int get_bytes(stats_t *me) {
-  int m = (ME->use0 + ME->use1);
-  int n = (m + 7)/8;
-  return n;
-}
-
 static inline int get_bits(stats_t *me) {
   return (ME->use0 + ME->use1);
-}
-
-static char *string(stats_t *me, uint64_t r) {
-  int n = get_bytes(me);
-  char *ans = (char*) malloc(2*n+1);
-  {int i; for (i=0; i<n; ++i) { sprintf(ans+2*i,"%02x",((uint8_t*)&r)[i]); } }
-  return ans;
 }
 
 static void store(stats_t *me, uint64_t *r, const char *value) {
   *r = strtol(value,0,16);
 }
-
 
 enum DoubleIndexes {
   DISamples,
@@ -60,6 +46,7 @@ enum DoubleIndexes {
   DILuck,
   DIZLuck,
   DINLuck,
+  DILnP,
   DIDF,
 };
 
@@ -98,6 +85,21 @@ static void stats_max64_config(stats_t *me, const char *args) {
 static double value(stats_t *me) {
   int bits = get_bits(me);
   return (~((ME->max+1) << (64-bits))+1)/pow(2,64);
+}
+
+static double lnp(stats_t *me) {
+  if (ME->value != NAN) {
+    int bits = get_bits(me);
+    uint64_t Nm1 =  (~((uint64_t)0)) >> (64-bits);
+    uint64_t i = Nm1-(ME->max);
+    double N = pow(2,bits);
+    int S = ME->samples;
+    double a=log(-expm1(S*log1p(-(1/(N-i)))));
+    double b=S*log1p(-(i/N)); // !!! -i/N != -(i/N) !!!
+    return a+b;
+  } else {
+    return NAN;
+  }
 }
 
 static double luck(stats_t *me) {
@@ -193,6 +195,7 @@ static int stats_max64_get_double_index(stats_t *me, const char *name) {
   if (strcmp(name,"zluck")==0) { return DIZLuck; }
   if (strcmp(name,"nluck")==0) { return DINLuck; }
   if (strcmp(name,"df")==0) { return DIDF; }
+  if (strcmp(name,"lnp")==0) { return DILnP; }
   return -1;
 }
 
@@ -212,12 +215,13 @@ static double stats_max64_get_double(stats_t *me, int index) {
   case DISkip1: return ME->skip1;
   case DIOffset: return ME->offset;
   case DISamples: return ME->samples;
+  case DIMax: return ME->max;
   case DIValue: return ME->value;
   case DILuck: return luck(me);
   case DIZLuck: return zluck(me);
   case DINLuck: return nluck(me);
   case DIDF: return df(me);
-  case DIMax: return ME->max;
+  case DILnP: return lnp(me);
   }
   return NAN;
 }
@@ -266,9 +270,10 @@ static char *results(stats_t *me) {
 
   snprintf(tmp,sizeof(tmp),
            "mu=%lg sigma=%lg"
-           " value=%lg zluck=%lg nluck=%lg df=%lf luck=%lg",
+           " value=%lg lnp=%lg zluck=%lg nluck=%lg df=%lf luck=%lg",
            ME->mu,ME->sigma,
            me->get_double(me,DIValue),
+           me->get_double(me,DILnP),
            me->get_double(me,DIZLuck),
            me->get_double(me,DINLuck),
            me->get_double(me,DIDF),
@@ -290,7 +295,6 @@ static void stats_max64_run(stats_t *me, reader_t *src) {
   bits_t *b = bits(src,BITS_NO_CLOSE);
   int mbits = get_bits(me);
   uint64_t mask = ~((~((uint64_t)(0))) << mbits);
-  int n = get_bytes(me);
   uint64_t x;
   uint64_t max = 0;
 
