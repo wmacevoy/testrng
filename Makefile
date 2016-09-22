@@ -78,16 +78,18 @@ run : bin/testrng
 show_dieharder_rngs :
 	dieharder -g -1
 
-STATS=--stats "repeat samples=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-
+STATS0=--stats "repeat samples=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS1=--stats "repeat samples=1e8 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS=$(STATS1)
 test-rdrand : libs bins
 	bin/testrng --rng "rng_rdrand" $(STATS)
 
 test-urandom : libs bins
 	bin/testrng --rng "/dev/urandom" $(STATS)
 
-test-dh-rand : libs bins
-	bin/testrng --rng "src/rng_dieharder rand|" $(STATS)
+test-dh-% : libs bins
+	bin/testrng --rng "src/rng_dieharder $*|" $(STATS)
 
-test-dh-aes-ofb : libs bins
-	bin/testrng --rng "src/rng_dieharder AES_OFB|" $(STATS)
+fail-test : test-dh-rand test-dh-borosh13 
+pass-test : test-dh-AES_OFB
+
