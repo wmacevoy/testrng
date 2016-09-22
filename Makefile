@@ -2,9 +2,15 @@ CFLAGS=-O -fPIC -Iinclude -std=c11 -mrdrnd
 
 all : libs bins
 
-libs : lib/libstats_max64.so
+libs : lib/libstats_max64.so lib/libstats_repeat.so
 
-bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64
+bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/dieharder_to_binary
+
+tmp/dieharder_to_binary.o : src/dieharder_to_binary.c
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+bin/dieharder_to_binary : tmp/dieharder_to_binary.o
+	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 tmp/path_to_self.o : src/path_to_self.c include/path_to_self.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -36,11 +42,18 @@ bin/test_bits : tmp/test_bits.o tmp/bits.o tmp/reader.o
 tmp/stats_max64.o : src/stats_max64.c include/stats_max64.h include/stats.h include/reader.h include/bits.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
+lib/libstats_max64.so : tmp/stats_max64.o tmp/bits.o
+	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
+tmp/stats_repeat.o : src/stats_repeat.c include/stats_repeat.h include/stats.h include/reader.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+lib/libstats_repeat.so : tmp/stats_repeat.o tmp/stats_load.o tmp/path_to_self.o
+	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
 tmp/stats_load.o : src/stats_load.c include/stats_load.h include/stats.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-lib/libstats_max64.so : tmp/stats_max64.o tmp/bits.o
-	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 tmp/test_stats_max64.o : src/test_stats_max64.c include/stats_max64.h include/stats.h include/reader.h include/bits.h include/rng_rdrand.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -60,4 +73,21 @@ bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/p
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 run : bin/testrng
-	bin/testrng --rng /dev/urandom --stats max64
+	bin/testrng --rng /dev/urandom --stats "repeat samples=100 stats=(max64)"
+
+show_dieharder_rngs :
+	dieharder -g -1
+
+STATS=--stats "repeat samples=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+
+test-rdrand : libs bins
+	bin/testrng --rng "rng_rdrand" $(STATS)
+
+test-urandom : libs bins
+	bin/testrng --rng "/dev/urandom" $(STATS)
+
+test-dh-rand : libs bins
+	bin/testrng --rng "src/rng_dieharder rand|" $(STATS)
+
+test-dh-aes-ofb : libs bins
+	bin/testrng --rng "src/rng_dieharder AES_OFB|" $(STATS)

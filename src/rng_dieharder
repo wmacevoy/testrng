@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# dieharder does not honor the -B flag, and fails to send an unending or large
+# stream, so this script runs it again and again and converts the output to
+# a binary stream suitable for testrng's pipe input
+#
+# Ie
+#    bin/testrng --rng "src/rng_dieharder -g rand|" --stats max64
+#
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+(while dieharder -g "$@" -o -t 1000000 ; do true; done) | "$DIR"/../bin/dieharder_to_binary
