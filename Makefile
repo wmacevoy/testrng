@@ -78,9 +78,40 @@ run : bin/testrng
 show_dieharder_rngs :
 	dieharder -g -1
 
-STATS0=--stats "repeat samples=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-STATS1=--stats "repeat samples=1e8 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS0=--stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS1=--stats "repeat samples=1e6 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
 STATS=$(STATS1)
+
+GOOD=\
+	test-rdrand \
+	test-urandom \
+	test-dh-AES_OFB
+
+POOR=\
+	test-dh-borosh13 \
+	test-dh-rand \
+	test-dh-coveyou \
+	test-dh-knuthran \
+	test-dh-ran3 \
+	test-dh-rand \
+	test-dh-ranlux \
+	test-dh-ranlux389 \
+	test-dh-ranlxs0 \
+	test-dh-ranlxs1 \
+	test-dh-ranlxs2 \
+	test-dh-ranmar \
+	test-dh-slatec \
+	test-dh-transputer \
+	test-dh-uni \
+	test-dh-vax \
+	test-dh-waterman14 \
+	test-dh-zuf \
+	test-dh-R_knuth_taocp \
+	test-dh-R_knuth_taocp2
+
+test-pass : $(GOOD)
+test-fail : $(POOR)
+
 test-rdrand : libs bins
 	bin/testrng --rng "rng_rdrand" $(STATS)
 
@@ -90,6 +121,9 @@ test-urandom : libs bins
 test-dh-% : libs bins
 	bin/testrng --rng "src/rng_dieharder $*|" $(STATS)
 
-fail-test : test-dh-rand test-dh-borosh13 
-pass-test : test-dh-AES_OFB
+dieharder-list-tests:
+	dieharder -l
+
+dieharder-list-rngs:
+	dieharder -g -1
 

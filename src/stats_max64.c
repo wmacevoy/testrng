@@ -352,13 +352,13 @@ stats_t* stats_max64(const char *cfg)
   
   if (me == 0) return (stats_t*)0;
 
-  ME->use0 = 12;
-  ME->skip0 = 4;
-  ME->use1 =  7;
-  ME->skip1 = 12;
+  ME->use0 = 24;
+  ME->skip0 = 8;
+  ME->use1 = 24;
+  ME->skip1 = 8;
   ME->max = 0;
   ME->offset = 0;
-  ME->samples = 16;
+  ME->samples = 3;
   ME->changed=1;
   ME->mu=0;
   ME->sigma=0;

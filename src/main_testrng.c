@@ -65,11 +65,10 @@ int main(int argc, char *argv[])
   char *name = stats_get_string_by_name(stats,"name");
   char *config = stats_get_string_by_name(stats,"config");
   char *results = stats_get_string_by_name(stats,"results");
-  printf("`testrng --rng %s --stats \"%s %s\"` = \"%s\"\n",rng_config,name,config,results);
-  printf("luck=%lf\n",stats_get_double_by_name(stats,"luck"));
-  printf("zluck=%lf\n",stats_get_double_by_name(stats,"zluck"));
-  printf("nluck=%lf\n",stats_get_double_by_name(stats,"nluck"));
-  printf("df=%lf\n",stats_get_double_by_name(stats,"df"));
+  printf("%s --rng \"%s\" --stats \"%s %s\"\n",
+         argv[0],rng_config,name,config);
+  printf("> %s\n",results);
+
   free(name);
   free(config);
   free(results);

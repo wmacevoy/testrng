@@ -108,8 +108,13 @@ static char *config(stats_t *me) {
 
 static char *results(stats_t *me) {
   char tmp[4096];
-  snprintf(tmp,sizeof(tmp),"sample=%lg zluck=%lg df=%lg luck=%lg",
-           ME->sample, ME->zl,ME->df, luck(me));
+  char *msg = "";
+  if (!isnan(ME->limit) && !isnan(ME->zl)) {
+    if (ME->zl < -fabs(ME->limit)) msg=" *** UNLUCKY ***";
+    if (ME->zl >  fabs(ME->limit)) msg=" ***  LUCKY ***";
+  }
+  snprintf(tmp,sizeof(tmp),"sample=%lg zluck=%lg df=%lg luck=%lg%s",
+           ME->sample, ME->zl,ME->df, luck(me), msg);
   return strdup(tmp);
 }
 
