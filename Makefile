@@ -1,4 +1,5 @@
-CFLAGS=-O -fPIC -Iinclude -std=c11 -mrdrnd
+CFLAGS=-O -fPIC -Iinclude -mrdrnd 
+LDFLAGS=-ldl -lm
 
 all : libs bins
 

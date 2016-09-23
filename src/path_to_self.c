@@ -1,5 +1,7 @@
 #include "path_to_self.h"
 
+#include <string.h>
+
 #ifdef __APPLE__
 
 #include <mach-o/dyld.h>
