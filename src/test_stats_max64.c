@@ -48,7 +48,8 @@ char *get_string(test_t *test, const char *name) {
 void cleanup(test_t *test) {
   reader_close(test->rng);
   stats_close(test->stats);
-  for (unsigned i=0; i<test->nclean; ++i) {
+  unsigned i;
+  for (i=0; i<test->nclean; ++i) {
     free(test->clean[i]);
   }
   free(test);
