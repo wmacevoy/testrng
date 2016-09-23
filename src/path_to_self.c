@@ -1,6 +1,5 @@
 #include "path_to_self.h"
 
-#include <string.h>
 
 #ifdef __APPLE__
 
@@ -25,22 +24,18 @@ char *path_to_self()
 
 #ifdef __linux__
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <linux/limits.h>
 
 char *path_to_self()
 {
   char tmp[PATH_MAX];
-  FILE *in = fopen("/proc/self/exe","rb");
-  ssize_t size = fread(tmp,sizeof(tmp)-1,1,in);
-  if (size >= 0) {
-    tmp[size-1]=0;
+  if (readlink("/proc/self/exe", tmp, PATH_MAX) >= 0) {
+    return strdup(tmp);
   } else {
-    tmp[0]=0;
+    return 0;
   }
-  fclose(in);
-  return strdup(tmp);
 }
 
 #endif
