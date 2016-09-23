@@ -54,6 +54,7 @@ stats_t *stats_load(const char *config) {
   void *dl = dlopen(lib, RTLD_LAZY);
 
   loader_t *loader = (loader_t*) dlsym(dl,sym);
+
   if (loader != 0) {
     return loader(config);
   } else {
