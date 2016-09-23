@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-reader_t *rng_rdrand(const char *config);
+reader_t *rng_reader(const char *config);
 
 #ifdef __cplusplus
 } /* extern "C" */
