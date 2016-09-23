@@ -1,6 +1,5 @@
-CFLAGS=-O -fPIC -Iinclude -mrdrnd 
+CFLAGS=-O -fPIC -Iinclude -mrdrnd
 LDFLAGS=-ldl -lm
-
 all : libs bins
 
 libs : lib/libstats_max64.so lib/libstats_repeat.so
@@ -80,7 +79,7 @@ show_dieharder_rngs :
 	dieharder -g -1
 
 STATS0=--stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-STATS1=--stats "repeat samples=1e6 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS1=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
 STATS=$(STATS1)
 
 GOOD=\
