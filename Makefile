@@ -80,7 +80,8 @@ show_dieharder_rngs :
 
 STATS0=--stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
 STATS1=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-STATS=$(STATS1)
+STATS2=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
+STATS=$(STATS2)
 
 GOOD=\
 	test-rdrand \

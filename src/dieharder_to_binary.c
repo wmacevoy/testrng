@@ -9,6 +9,7 @@
 
 
 #define PAGE (1024*1024)
+#define BITS 31
 // #define LITTLE_ENDIAN ((char*)((uint32_t)0xFF))[0]==0xFF)
 
 const char *magic="#=======";
@@ -34,8 +35,8 @@ void ascii() {
 #ifndef LITTLE_ENDIAN
       in=__bswap_32 (in);
 #endif
-      out = (out << 31) | (in&0x7FFFFFFF);
-      bits += 31;
+      out = (out << BITS) | (in&((~((uint32_t)0))>>(32-BITS)));
+      bits += BITS;
       if (bits >= 32) {
         uint32_t o32 = (out >> (bits-32));
 #ifndef LITTLE_ENDIAN
