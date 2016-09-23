@@ -19,7 +19,7 @@ test_t * setup(const char *config) {
   test_t * test = (test_t*) malloc(sizeof(test_t));
   assert(test != 0);
   memset(test,0,sizeof(test_t));
-  test->rng = rng_rdrand();
+  test->rng = rng_rdrand("");
   test->stats = stats_max64(config);
   return test;
 }

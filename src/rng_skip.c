@@ -50,7 +50,7 @@ static ssize_t rng_skip_read(reader_t *me, uint8_t *buffer, size_t size) {
   size_t ans = 0;
   size_t offset = 0;
   while (offset < size) {
-    int n = 1024*1024;
+    int n = 128*1024;
     if (size-offset < n) n=size-offset;
     ssize_t m = rng_skip_read_bits(me,buffer+(offset/8),offset%8,n);
     if (m > 0) {

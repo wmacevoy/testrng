@@ -1,10 +1,11 @@
-CFLAGS=-O -fPIC -Iinclude -mrdrnd
+#CFLAGS=-O -fPIC -Iinclude -mrdrnd
+CFLAGS=-g -fPIC -Iinclude -mrdrnd
 LDFLAGS=-ldl -lm
 all : libs bins
 
-libs : lib/libstats_max64.so lib/libstats_repeat.so
+libs : lib/libstats_max64.so lib/libstats_repeat.so lib/librng_rdrand.so lib/librng_reader.so lib/librng_skip.so 
 
-bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/dieharder_to_binary
+bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/dieharder_to_binary bin/test_rng_skip
 
 tmp/dieharder_to_binary.o : src/dieharder_to_binary.c
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -39,6 +40,7 @@ tmp/test_bits.o : src/test_bits.c include/bits.h include/reader.h
 bin/test_bits : tmp/test_bits.o tmp/bits.o tmp/reader.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
+
 tmp/stats_max64.o : src/stats_max64.c include/stats_max64.h include/stats.h include/reader.h include/bits.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
@@ -54,6 +56,8 @@ lib/libstats_repeat.so : tmp/stats_repeat.o tmp/stats_load.o tmp/path_to_self.o
 tmp/stats_load.o : src/stats_load.c include/stats_load.h include/stats.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
+tmp/rng_load.o : src/rng_load.c include/rng_load.h include/reader.h
+	$(CC) -c -o $@ $(CFLAGS) $<
 
 tmp/test_stats_max64.o : src/test_stats_max64.c include/stats_max64.h include/stats.h include/reader.h include/bits.h include/rng_rdrand.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -68,8 +72,28 @@ tmp/testrng.o : src/main_testrng.c include/reader.h include/rng_rdrand.h include
 tmp/rng_rdrand.o : src/rng_rdrand.c include/rng_rdrand.h include/reader.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
+lib/librng_rdrand.so : tmp/rng_rdrand.o
+	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/path_to_self.o
+tmp/rng_reader.o : src/rng_reader.c include/rng_reader.h include/reader.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+lib/librng_reader.so : tmp/rng_reader.o tmp/reader.o
+	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
+tmp/rng_skip.o : src/rng_skip.c include/bits.h include/reader.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+lib/librng_skip.so : tmp/rng_skip.o tmp/bits.o tmp/reader.o tmp/rng_load.o tmp/path_to_self.o
+	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
+tmp/test_rng_skip.o : src/test_rng_skip.c include/reader.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+bin/test_rng_skip : tmp/test_rng_skip.o tmp/rng_skip.o tmp/rng_load.o tmp/path_to_self.o tmp/bits.o
+	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
+
+bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/rng_load.o tmp/path_to_self.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 run : bin/testrng
@@ -82,6 +106,9 @@ STATS0=--stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0
 STATS1=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
 STATS2=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
 STATS=$(STATS2)
+
+RNG0=--rng rdrand
+
 
 GOOD=\
 	test-rdrand \
@@ -114,13 +141,16 @@ test-pass : $(GOOD)
 test-fail : $(POOR)
 
 test-rdrand : libs bins
-	bin/testrng --rng "rng_rdrand" $(STATS)
+	bin/testrng --rng "rdrand" $(STATS)
 
 test-urandom : libs bins
-	bin/testrng --rng "/dev/urandom" $(STATS)
+	bin/testrng --rng "reader /dev/urandom" $(STATS)
 
 test-dh-% : libs bins
-	bin/testrng --rng "src/rng_dieharder $*|" $(STATS)
+	bin/testrng \
+		--rng "skip skip=1 keep=31 rng=(reader src/rng_dieharder $*|)" \
+		--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
+
 
 dieharder-list-tests:
 	dieharder -l

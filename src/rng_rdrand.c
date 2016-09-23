@@ -42,7 +42,7 @@ static void rng_rdrand_close(reader_t *me)
   free(ME);
 }
 
-reader_t* rng_rdrand()
+reader_t* rng_rdrand(const char *config)
 {
   rng_rdrand_t *me =
     (rng_rdrand_t*)malloc(sizeof(rng_rdrand_t));

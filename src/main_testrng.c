@@ -2,29 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "reader.h"
-#include "rng_rdrand.h"
 #include "stats_load.h"
-
-reader_t *rng_load(char *config) {
-  if (strcmp(config,"rng_rdrand") == 0) {
-    return rng_rdrand();
-  }
-
-  if (strcmp(config,"/dev/stdin") == 0) {
-    return dev_reader(0);
-  }
-
-  if (strlen(config) > 0 && config[strlen(config)-1]=='|') {
-    char *cmd = strdup(config);
-    cmd[strlen(cmd)-1]=0;
-    reader_t *r = pipe_reader(cmd);
-    free(cmd);
-    return r;
-  }
-
-  return file_reader(fopen(config,"rb"));
-}
+#include "rng_load.h"
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +26,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  if (rng_config == 0) rng_config = "/dev/urandom";
+  if (rng_config == 0) rng_config = "reader /dev/urandom";
   if (stats_config == 0) stats_config = "max64";
    
   rng = rng_load(rng_config);
