@@ -24,7 +24,7 @@ static int rng_skip_read_bits(reader_t *me, uint8_t *buffer, int offset, int siz
       int n=ME->skip-ME->at;
       if (n > 8*sizeof(tmp)) n = 8*sizeof(tmp);
       int m=ME->bits->read(ME->bits,&tmp,0,n);
-      if (m < 0) {
+      if (m <= 0) {
         return ans > 0 ? ans : -1;
       }
       ME->at += m;
