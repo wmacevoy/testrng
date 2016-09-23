@@ -72,12 +72,15 @@ reader_t *rng_skip(const char *args) {
   reader_t *me = (reader_t*) malloc(sizeof(skip_reader_t));
   if (me == 0) return (reader_t*)0;
 
+  memset(me,0,sizeof(skip_reader_t));
+
   ME->base.close = rng_skip_close;
   ME->base.read = rng_skip_read;
 
   ME->bits=0;
   ME->keep=31;
   ME->skip=1;
+  ME->at=0;
 
   while (*args != 0) {
     {
