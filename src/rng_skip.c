@@ -16,33 +16,26 @@ typedef struct
 
 #define ME ((skip_reader_t*)me)
 
-static int rng_skip_read_bits(reader_t *me, uint8_t *buffer, int offset, int size) {
-  int ans = 0;
-  uint64_t tmp;
-  while (offset < size) {
+static int rng_skip_read_bits(reader_t *me, uint8_t *buffer, int offset0, int size) {
+  int offset = offset0;
+  int offset1 = offset0+size;
+  while (offset < offset1) {
     while (ME->at < ME->skip) {
-      int n=ME->skip-ME->at;
-      if (n > 8*sizeof(tmp)) n = 8*sizeof(tmp);
-      int m=ME->bits->read(ME->bits,&tmp,0,n);
-      if (m <= 0) {
-        return ans > 0 ? ans : -1;
-      }
-      ME->at += m;
+      int mskip=bits_skip(ME->bits,ME->skip-ME->at);
+      if (mskip <= 0) goto exit;
+      ME->at += mskip;
     }
-
-    int n = (ME->skip+ME->keep)-ME->at;
-    if (n > size) n=size;
-    int m=ME->bits->read(ME->bits,buffer,offset,n);
-    if (m > 0) {
-      ans += m;
-      offset += m;
-      ME->at += m;
-    } else {
-      break;
+    while (ME->at < ME->skip+ME->keep) {
+      int nwant = (ME->skip+ME->keep)-ME->at;
+      if (nwant > size) nwant=size;
+      int mkeep=bits_read(ME->bits,buffer,offset,nwant);
+      if (mkeep <= 0) goto exit;
+      ME->at += mkeep;
+      offset += mkeep;
     }
-    if (ME->at >= ME->skip+ME->keep) ME->at = 0;
+    ME->at = 0;
   }
-  return ans > 0 ? ans : -1;
+ exit: return offset > offset0 ? offset-offset0 : 0;
 }
 
 static ssize_t rng_skip_read(reader_t *me, uint8_t *buffer, size_t size) {
@@ -90,6 +83,7 @@ reader_t *rng_skip(const char *args) {
       sscanf(args," %[^\t =] = (%[^)]) %n",name,svalue,&delta);
       if (delta >= 0 && strcmp(name,"rng")==0) {
         reader_t *src = rng_load(svalue);
+        printf("rng_load(%s)=%p\n",svalue,src);
         if (src == 0) {
           free(me);
           return (reader_t*)0;
@@ -112,11 +106,13 @@ reader_t *rng_skip(const char *args) {
       if (delta >= 0) {
         if (strcmp(name,"keep")==0) {
           ME->keep=dvalue;
+          printf("skip=%d\n",(int)ME->keep);
           args += delta;
           continue;
         }
         if (strcmp(name,"skip")==0) {
           ME->skip=dvalue;
+          printf("skip=%d\n",(int)ME->skip);
           args += delta;
           continue;
         }
@@ -126,6 +122,7 @@ reader_t *rng_skip(const char *args) {
     rng_skip_close(me);
     return (reader_t*)0;
   }
+
   return me;
 }
 

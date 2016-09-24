@@ -148,7 +148,12 @@ test-urandom : libs bins
 
 test-dh-% : libs bins
 	bin/testrng \
-		--rng "skip skip=1 keep=31 rng=(reader src/rng_dieharder $*|)" \
+		--rng "reader src/rng_dieharder $*|" \
+		--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
+
+test-skip : libs bins
+	bin/testrng \
+		--rng "skip skip=1 keep=7 rng=(rdrand)" \
 		--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
 
 

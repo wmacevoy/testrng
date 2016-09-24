@@ -29,7 +29,7 @@ void test_skip0()
 
 void test_skip1() 
 {
-  int n=100000;
+  int n=1000000;
   {
     int i;
     FILE *out = fopen("tmp/skip.dat","w");
@@ -69,7 +69,6 @@ void test_skip1()
     reader_close(rng);
   }
 }
-
 
 int main()
 {
