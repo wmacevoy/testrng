@@ -9,4 +9,4 @@
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-(while dieharder -g "$@" -o -t 1000000 -B ; do true; done) | "$DIR"/../bin/dieharder_to_binary
+(while dieharder -g "$@" -o -t 1000000 ; do true; done) | "$DIR"/../bin/dieharder_to_binary
