@@ -6,6 +6,7 @@
 
 #include "stats_repeat.h"
 #include "stats_load.h"
+#include "parse.h"
 
 typedef struct stats_repeat {
   stats_t base;
@@ -40,42 +41,19 @@ enum DoubleIndexes {
 #define ME ((stats_repeat_t*)me)
 
 static void stats_repeat_config(stats_t *me, const char *args) {
-  char name[4096];
-
-  while (*args != 0) {
-    {
-      int delta = -1;
-      double dvalue;
-      sscanf(args," %[^\t =] = %lf %n",name,&dvalue,&delta);
-      if (delta >= 0) {
-        if (stats_set_double_by_name(me,name,dvalue)) {
-          args += delta;
-          continue;
-        }
-      }
-    }
-
-    {
-      int delta = -1;
-      char svalue[4096];
-      sscanf(args," %[^\t =] = (%[^)]) %n",name,svalue,&delta);
-      if (delta >= 0) {
-        if (stats_set_string_by_name(me,name,svalue)) {
-          args += delta;
-          continue;
-        }
-      }
-    }
-
-    { 
-      int delta = -1;
-      char junk[4096];
-      sscanf(args," %s %n",junk,&delta);
-      if (delta >= 0) {
-        args += delta;
-      }
-    }
+  parse_t *p=parse(args);
+  if (p == 0) {
+    fprintf(stderr,"error parsing configuration for stats_repeat\n");
   }
+  int i,n=parse_get_count(p);
+  for (i=0; i<n; ++i) {
+    const char *name = parse_get_name(p,i);
+    if (stats_set_double_by_name(me,name,parse_get_double(p,name,NAN))) { continue; }
+    if (stats_set_string_by_name(me,name,parse_get_string(p,name,""))) { continue; }
+    fprintf(stderr,"error parsing configuration for stats_repeat\n");
+    break;
+  }
+  parse_close(p);
 }
 
 static double zluck(stats_repeat_t *me) {

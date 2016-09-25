@@ -1,11 +1,11 @@
-#CFLAGS=-O -fPIC -Iinclude -mrdrnd
-CFLAGS=-g -fPIC -Iinclude -mrdrnd
+CFLAGS=-O -fPIC -Iinclude -mrdrnd
+#CFLAGS=-g -fPIC -Iinclude -mrdrnd
 LDFLAGS=-ldl -lm
 all : libs bins
 
 libs : lib/libstats_max64.so lib/libstats_repeat.so lib/librng_rdrand.so lib/librng_reader.so lib/librng_skip.so 
 
-bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/dieharder_to_binary bin/test_rng_skip
+bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/dieharder_to_binary bin/test_rng_skip bin/test_parse bin/test_path_to_self
 
 tmp/dieharder_to_binary.o : src/dieharder_to_binary.c
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -15,6 +15,15 @@ bin/dieharder_to_binary : tmp/dieharder_to_binary.o
 
 tmp/path_to_self.o : src/path_to_self.c include/path_to_self.h
 	$(CC) -c -o $@ $(CFLAGS) $<
+
+tmp/parse.o : src/parse.c include/parse.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+tmp/test_parse.o : src/test_parse.c include/parse.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+bin/test_parse : tmp/test_parse.o tmp/parse.o
+	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 tmp/test_path_to_self.o : src/test_path_to_self.c include/path_to_self.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -50,7 +59,7 @@ lib/libstats_max64.so : tmp/stats_max64.o tmp/bits.o
 tmp/stats_repeat.o : src/stats_repeat.c include/stats_repeat.h include/stats.h include/reader.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-lib/libstats_repeat.so : tmp/stats_repeat.o tmp/stats_load.o tmp/load.o tmp/path_to_self.o
+lib/libstats_repeat.so : tmp/stats_repeat.o tmp/stats_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o
 	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 tmp/stats_load.o : src/stats_load.c include/stats_load.h include/load.h include/stats.h
@@ -59,7 +68,7 @@ tmp/stats_load.o : src/stats_load.c include/stats_load.h include/load.h include/
 tmp/rng_load.o : src/rng_load.c include/rng_load.h include/load.h include/reader.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-tmp/load.o : src/load.c include/load.h
+tmp/load.o : src/load.c include/load.h include/parse.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 tmp/test_stats_max64.o : src/test_stats_max64.c include/stats_max64.h include/stats.h include/reader.h include/bits.h include/rng_rdrand.h
@@ -84,19 +93,19 @@ tmp/rng_reader.o : src/rng_reader.c include/rng_reader.h include/reader.h
 lib/librng_reader.so : tmp/rng_reader.o tmp/reader.o
 	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-tmp/rng_skip.o : src/rng_skip.c include/bits.h include/reader.h
+tmp/rng_skip.o : src/rng_skip.c include/bits.h include/reader.h include/parse.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-lib/librng_skip.so : tmp/rng_skip.o tmp/bits.o tmp/reader.o tmp/rng_load.o tmp/load.o tmp/path_to_self.o
+lib/librng_skip.so : tmp/rng_skip.o tmp/bits.o tmp/reader.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o
 	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-tmp/test_rng_skip.o : src/test_rng_skip.c include/reader.h
+tmp/test_rng_skip.o : src/test_rng_skip.c include/parse.h include/reader.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-bin/test_rng_skip : tmp/test_rng_skip.o tmp/rng_skip.o tmp/rng_load.o tmp/load.o tmp/path_to_self.o tmp/bits.o
+bin/test_rng_skip : tmp/test_rng_skip.o tmp/rng_skip.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o tmp/bits.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/rng_load.o tmp/load.o tmp/path_to_self.o
+bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 run : bin/testrng

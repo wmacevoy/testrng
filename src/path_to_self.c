@@ -31,7 +31,9 @@ char *path_to_self()
 char *path_to_self()
 {
   char tmp[PATH_MAX];
-  if (readlink("/proc/self/exe", tmp, PATH_MAX) >= 0) {
+  ssize_t status = readlink("/proc/self/exe", tmp, PATH_MAX);
+  if (status >= 0) {
+    tmp[status]=0;
     return strdup(tmp);
   } else {
     return 0;

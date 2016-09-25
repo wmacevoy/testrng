@@ -1,5 +1,6 @@
 #include "loader.h"
 #include "path_to_self.h"
+#include "parse.h"
 
 #include <unistd.h>
 #include <dlfcn.h>
@@ -27,22 +28,15 @@ static char *get_lib_dir() {
 typedef void *builder_t(const char *config);
 
 void *load(const char *base, const char *config) {
-  char name[4096];
+  char *name = parse_id(&config);
+
   char lib[4096];
   char sym[4096];
 
-  int rest = -1;
-
-  sscanf(config," %s %n",name,&rest);
-  if (rest < 0) { 
-    fprintf(stderr,"no name cfg=%s\n",config);
-    return 0;  
-  } else {
-    config += rest;
-  }
-
   snprintf(lib,sizeof(lib),"%s/lib%s_%s.so",get_lib_dir(),base,name);
   snprintf(sym,sizeof(sym),"%s_%s",base,name);
+
+  free(name);
 
   void *dl = dlopen(lib, RTLD_LAZY);
   if (dl == 0) {

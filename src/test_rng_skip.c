@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "reader.h"
+#include "rng_load.h"
 
 char *pat1 = "this is a test.";
 char *pat2= "iiae.";
@@ -16,7 +17,7 @@ void test_skip0()
   fwrite(pat1,strlen(pat1),1,out);
   fclose(out);
 
-  reader_t *rng=rng_skip("skip=16 keep=8 rng=(reader tmp/skip.dat)");
+  reader_t *rng=rng_load("skip skip=16 keep=8 rng=(reader tmp/skip.dat)");
   uint8_t tmp[4096];
   ssize_t got=reader_read(rng,tmp,sizeof(tmp));
   printf("got %d bytes\n",(int) got);
@@ -45,7 +46,7 @@ void test_skip1()
   int chunk;
   for (chunk=1; chunk<=10000; chunk *= 2) {
     int i;
-    reader_t *rng=rng_skip("skip=16 keep=8 rng=(reader tmp/skip.dat)");
+    reader_t *rng=rng_load("skip skip=16 keep=8 rng=(reader tmp/skip.dat)");
     uint8_t tmp[chunk+1];
 
     for (i=0; i<nn-chunk; i += chunk) {

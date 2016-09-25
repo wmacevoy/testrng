@@ -55,7 +55,7 @@ extern "C" {
     return h->get_string(h,h->get_string_index(h,name));
   }
 
-  static inline int stats_set_string_by_name(stats_t *h, const char *name, char *value) {
+  static inline int stats_set_string_by_name(stats_t *h, const char *name, const char *value) {
     return h->set_string(h,h->get_string_index(h,name),value);
   }
 
