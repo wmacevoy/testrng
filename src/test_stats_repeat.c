@@ -81,7 +81,7 @@ int get_sample(test_t *test) {
   double samples = get_samples(test);
   assert (floor(sample) == sample);
   assert (0 <= sample && (isnan(samples) || sample <= samples));
-`  return (int) sample;
+  return (int) sample;
 }
 
 double get_limit(test_t *test) {
