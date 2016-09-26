@@ -12,7 +12,7 @@
 #endif
 #endif
 
-#ifdef LITTLE_ENDIAN
+#ifndef LITTLE_ENDIAN
 #include <byteswap.h>
 #endif
 
@@ -22,12 +22,12 @@ typedef struct
   reader_t *rng;
   uint64_t out;
   uint32_t bits;
-  uint32_t keep;
-} rng_keep32_t;
+  uint32_t mix;
+} rng_mix32_t;
 
-#define ME ((rng_keep32_t*)me)
+#define ME ((rng_mix32_t*)me)
 
-static ssize_t rng_keep32_read(reader_t *me, uint8_t *buffer, size_t size) {
+static ssize_t rng_mix32_read(reader_t *me, uint8_t *buffer, size_t size) {
   ssize_t ans = 0;
   while (size > 0) {
     if (ME->bits <= 32) {
@@ -38,8 +38,8 @@ static ssize_t rng_keep32_read(reader_t *me, uint8_t *buffer, size_t size) {
 #ifndef LITTLE_ENDIAN
       in=__bswap_32 (in);
 #endif
-      ME->out = (ME->out << (ME->keep)) | (in&((~((uint32_t)0))>>(32-(ME->keep))));
-      ME->bits += ME->keep;
+      ME->out = (ME->out << (ME->mix)) | (in&((~((uint32_t)0))>>(32-(ME->mix))));
+      ME->bits += ME->mix;
     }
     if (size >= 4 && ME->bits >= 32) {
       uint32_t o32 = (ME->out >> (ME->bits-32));
@@ -63,28 +63,28 @@ static ssize_t rng_keep32_read(reader_t *me, uint8_t *buffer, size_t size) {
   return ans;
 }
 
-static void rng_keep32_close(reader_t *me) {
+static void rng_mix32_close(reader_t *me) {
   reader_close(ME->rng);
   free(me);
 }
 
-reader_t *rng_keep32(const char *args) {
+reader_t *rng_mix32(const char *args) {
   parse_t *p = parse(args);
   if (p == 0) return 0;
 
-  reader_t *me = (reader_t*) malloc(sizeof(rng_keep32_t));
+  reader_t *me = (reader_t*) malloc(sizeof(rng_mix32_t));
   if (me == 0) return (reader_t*)0;
 
-  memset(me,0,sizeof(rng_keep32_t));
+  memset(me,0,sizeof(rng_mix32_t));
 
-  ME->base.close = rng_keep32_close;
-  ME->base.read = rng_keep32_read;
+  ME->base.close = rng_mix32_close;
+  ME->base.read = rng_mix32_read;
 
   ME->rng=rng_load(parse_get_string(p,"rng","rdrand"));
-  ME->keep=parse_get_double(p,"keep",31);
+  ME->mix=parse_get_double(p,"mix",31);
   ME->bits=0;
 
   parse_close(p);
 
   return me;
-}
+ }

@@ -4,14 +4,14 @@
 
 #include "stats_load.h"
 #include "rng_load.h"
-#include <mcheck.h>
+// #include <mcheck.h>
 
 int main(int argc, char *argv[])
 {
-  if (getenv("MALLOC_TRACE") != 0) {
-    printf("memory trace on.\n");
-    mtrace();
-  }
+  //  if (getenv("MALLOC_TRACE") != 0) {
+  //    printf("memory trace on.\n");
+  //    mtrace();
+  //  }
   int argi;
   char *rng_config = 0;
   char *stats_config = 0;

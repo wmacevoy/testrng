@@ -7,29 +7,30 @@
 #include "rng_load.h"
 
 char *pat1 = "0123abcdABCD";
-char *pat2= "23cdCD";
+char *pat2= "2bc01ABCa"
 
-void test_keep0() 
+void test_mix0() 
 {
-  FILE *out = fopen("tmp/keep32.dat","w");
+  FILE *out = fopen("tmp/mix32.dat","w");
   fwrite(pat1,strlen(pat1),1,out);
   fclose(out);
 
-  reader_t *rng=rng_load("keep32 keep=16 rng=(reader tmp/keep32.dat)");
+  reader_t *rng=rng_load("mix32 mix=24 rng=(reader tmp/mix32.dat)");
   uint8_t tmp[4096];
   ssize_t got=reader_read(rng,tmp,sizeof(tmp));
   tmp[got]=0;
+  printf("got '%s'\n",tmp);
   assert(got == strlen(pat2));
   assert(strncmp((char*)tmp,pat2,strlen(pat2)) == 0);
   reader_close(rng);
 }
 
-void test_keep1()
+void test_mix1()
 {
   int n=1000000;
   {
     int i;
-    FILE *out = fopen("tmp/keep32.dat","w");
+    FILE *out = fopen("tmp/mix32.dat","w");
     for (i=0; i<n; ++i) {
       fwrite(pat1,strlen(pat1),1,out);
     }
@@ -41,7 +42,7 @@ void test_keep1()
   int chunk;
   for (chunk=1; chunk<=10000; chunk *= 2) {
     int i;
-    reader_t *rng=rng_load("keep32 keep=16 rng=(reader tmp/keep32.dat)");
+    reader_t *rng=rng_load("mix32 mix=24 rng=(reader tmp/mix32.dat)");
     uint8_t tmp[chunk+1];
 
     for (i=0; i<nn-4-chunk; i += chunk) {
@@ -68,8 +69,8 @@ void test_keep1()
 
 int main()
 {
-  test_keep0();
-  test_keep1();
+  test_mix0();
+  test_mix1();
   printf("ok\n");
   return 0;
 }

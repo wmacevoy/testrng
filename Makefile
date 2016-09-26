@@ -3,11 +3,11 @@ CFLAGS=-O -fPIC -Iinclude -mrdrnd
 LDFLAGS=-ldl -lm
 all : libs bins
 
-libs : lib/libstats_max64.so lib/libstats_repeat.so lib/librng_rdrand.so lib/librng_reader.so lib/librng_skip.so lib/librng_keep32.so
+libs : lib/libstats_max64.so lib/libstats_repeat.so lib/librng_rdrand.so lib/librng_reader.so lib/librng_skip.so lib/librng_mix32.so
 
-bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/test_stats_repeat bin/dieharder_to_binary bin/test_rng_skip bin/test_rng_keep32 bin/test_parse bin/test_path_to_self
+bins : bin/test_reader bin/test_bits bin/testrng bin/test_stats_max64 bin/test_stats_repeat bin/dieharder_to_binary bin/test_rng_skip bin/test_rng_mix32 bin/test_parse bin/test_path_to_self
 
-test-bins : bin/test_reader bin/test_bits bin/test_parse bin/test_path_to_self bin/test_rng_skip bin/test_rng_keep32 bin/test_stats_max64 bin/test_stats_repeat
+test-bins : bin/test_reader bin/test_bits bin/test_parse bin/test_path_to_self bin/test_rng_skip bin/test_rng_mix32 bin/test_stats_max64 bin/test_stats_repeat
 	for t in $^ ; do echo "$$t: start" ;  $$t | sed -e "s%^%$$t\: %" ; echo "$$t: end" ; done
 
 tmp/dieharder_to_binary.o : src/dieharder_to_binary.c
@@ -115,16 +115,16 @@ tmp/test_rng_skip.o : src/test_rng_skip.c include/parse.h include/reader.h
 bin/test_rng_skip : tmp/test_rng_skip.o tmp/rng_skip.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o tmp/bits.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-tmp/rng_keep32.o : src/rng_keep32.c include/bits.h include/reader.h include/parse.h
+tmp/rng_mix32.o : src/rng_mix32.c include/bits.h include/reader.h include/parse.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-lib/librng_keep32.so : tmp/rng_keep32.o tmp/bits.o tmp/reader.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o
+lib/librng_mix32.so : tmp/rng_mix32.o tmp/bits.o tmp/reader.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o
 	$(CC) -shared -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
-tmp/test_rng_keep32.o : src/test_rng_keep32.c include/parse.h include/reader.h
+tmp/test_rng_mix32.o : src/test_rng_mix32.c include/parse.h include/reader.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-bin/test_rng_keep32 : tmp/test_rng_keep32.o tmp/rng_keep32.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o tmp/bits.o
+bin/test_rng_mix32 : tmp/test_rng_mix32.o tmp/rng_mix32.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o tmp/bits.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LDFLAGS)
 
 bin/testrng : tmp/testrng.o tmp/reader.o tmp/rng_rdrand.o tmp/stats_load.o tmp/rng_load.o tmp/load.o tmp/parse.o tmp/path_to_self.o tmp/parse.o
@@ -192,7 +192,7 @@ test-skip : libs bins
 
 test-keep : libs bins
 	bin/testrng \
-		--rng "keep32 keep=31 rng=(reader src/rng_dieharder rand -B|)" \
+		--rng "mix32 keep=31 rng=(reader src/rng_dieharder rand -B|)" \
 		--stats "repeat samples=1e7 limit=10 progress=1000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
 
 
