@@ -1,4 +1,4 @@
-#include "loader.h"
+#include "load.h"
 #include "path_to_self.h"
 #include "parse.h"
 
