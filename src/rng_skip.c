@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define PAGE_SIZE 4096
+
 typedef struct
 {
   reader_t base;

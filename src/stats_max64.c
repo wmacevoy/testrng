@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "bits.h"
+#include "parse.h"
 
 #include "stats_max64.h"
 
@@ -62,27 +63,19 @@ enum StringIndexes {
 
 
 static void stats_max64_config(stats_t *me, const char *args) {
-  char name[4096];
-  char value[4096];
-
-  for (;;) {
-    int delta = -1;
-    sscanf(args," %[^\t =] = %s %n",name,value,&delta);
-    if (delta <= 0) break;
-    args += delta;
-
-    int si = me->get_string_index(me,name);
-    if (si >= 0) {
-      me->set_string(me,si,value);
-      continue;
-    }
-
-    int di = me->get_double_index(me,name);
-    if (di >= 0) {
-      me->set_double(me,di,atof(value));
-      continue;
-    }
+  parse_t *p=parse(args);
+  if (p == 0) {
+    fprintf(stderr,"error parsing configuration for stats_max64\n");
   }
+  int i,n=parse_get_count(p);
+  for (i=0; i<n; ++i) {
+    const char *name = parse_get_name(p,i);
+    if (stats_set_double_by_name(me,name,parse_get_double(p,name,NAN))) { continue; }
+    if (stats_set_string_by_name(me,name,parse_get_string(p,name,""))) { continue; }
+    fprintf(stderr,"error parsing configuration for stats_max64\n");
+    break;
+  }
+  parse_close(p);
 }
 
 static void moments(stats_t *me) {

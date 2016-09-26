@@ -5,8 +5,8 @@
 
 #include "reader.h"
 #include "stats.h"
-#include "stats_max64.h"
-#include "rng_rdrand.h"
+#include "stats_load.h"
+#include "rng_load.h"
 
 typedef struct {
   stats_t *stats;
@@ -15,12 +15,20 @@ typedef struct {
   void *clean[4096];
 } test_t;
 
-test_t * setup(const char *config) {
+test_t * setup(const char *rng_config,const char *stats_config) {
   test_t * test = (test_t*) malloc(sizeof(test_t));
   assert(test != 0);
   memset(test,0,sizeof(test_t));
-  test->rng = rng_rdrand("");
-  test->stats = stats_max64(config);
+  test->rng = rng_load(rng_config);
+  if (test->rng == 0) {
+    fprintf(stderr,"could not load rng: %s\n",rng_config);
+    exit(1);
+  }
+  test->stats = stats_load(stats_config);
+  if (test->stats == 0) {
+    fprintf(stderr,"coult not load stats: %s\n",stats_config);
+    exit(1);
+  }
   return test;
 }
 
@@ -181,7 +189,7 @@ double get_variance(test_t *test) {
 
 void test_setup()
 {
-  test_t *test = setup("samples=10 use0=5 skip0=3 use1=3 skip1=5 offset=129");
+  test_t *test = setup("rdrand","max64 samples=10 use0=5 skip0=3 use1=3 skip1=5 offset=129");
 
   assert(strcmp(get_string(test,"name"),"max64")==0);
   assert(get_double(test,"samples") == 10);
@@ -218,7 +226,7 @@ void test_setup()
 
 void test_probs()
 {
-  test_t *test = setup("samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
+  test_t *test = setup("rdrand","max64 samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
   int trials = 100000;
 
   int trial;
@@ -232,7 +240,7 @@ void test_probs()
 
 void test_bins()
 {
-  test_t *test = setup("samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
+  test_t *test = setup("rdrand", "max64 samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
 
   int N=(int) get_N(test);
   int trials=10000;
@@ -270,7 +278,7 @@ int by_prob(const void *v, const void *w) {
 
 void test_nluck()
 {
-  test_t *test = setup("samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
+  test_t *test = setup("rdrand","max64 samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
 
   int trials=10000;
   int trial;
@@ -297,7 +305,7 @@ void test_nluck()
 }
 
 void test_luck()  {
-  test_t *test = setup("samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
+  test_t *test = setup("rdrand", "max64 samples=3 use0=3 skip0=3 use1=5 skip1=5 offset=63");
 
   double N = get_N(test);
   double S = get_S(test);

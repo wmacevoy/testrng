@@ -32,15 +32,15 @@ void ascii() {
   for (;;) {
     if (getline(&line,&n,stdin) < 0) break;
     if (sscanf(line,"%" SCNu32 ,&in) == 1) {
-#ifndef LITTLE_ENDIAN
+#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
       in=__bswap_32 (in);
 #endif
       out = (out << BITS) | (in&((~((uint32_t)0))>>(32-BITS)));
       bits += BITS;
       if (bits >= 32) {
         uint32_t o32 = (out >> (bits-32));
-#ifndef LITTLE_ENDIAN
-        o32=__bswap_32 (out);
+#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        o32=__bswap_32 (o32);
 #endif
         write(1,&o32,4);
         bits -= 32;

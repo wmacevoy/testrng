@@ -6,18 +6,16 @@
 #include "reader.h"
 #include "rng_load.h"
 
-char *pat1 = "this is a test.";
-char *pat2= "iiae.";
+char *pat1 = "0123abcdABCD";
+char *pat2= "23cdCD";
 
-reader_t* rng_skip(const char *config);
-
-void test_skip0() 
+void test_keep0() 
 {
-  FILE *out = fopen("tmp/skip.dat","w");
+  FILE *out = fopen("tmp/keep32.dat","w");
   fwrite(pat1,strlen(pat1),1,out);
   fclose(out);
 
-  reader_t *rng=rng_load("skip skip=16 keep=8 rng=(reader tmp/skip.dat)");
+  reader_t *rng=rng_load("keep32 keep=16 rng=(reader tmp/keep32.dat)");
   uint8_t tmp[4096];
   ssize_t got=reader_read(rng,tmp,sizeof(tmp));
   tmp[got]=0;
@@ -26,12 +24,12 @@ void test_skip0()
   reader_close(rng);
 }
 
-void test_skip1() 
+void test_keep1()
 {
   int n=1000000;
   {
     int i;
-    FILE *out = fopen("tmp/skip.dat","w");
+    FILE *out = fopen("tmp/keep32.dat","w");
     for (i=0; i<n; ++i) {
       fwrite(pat1,strlen(pat1),1,out);
     }
@@ -43,10 +41,10 @@ void test_skip1()
   int chunk;
   for (chunk=1; chunk<=10000; chunk *= 2) {
     int i;
-    reader_t *rng=rng_load("skip skip=16 keep=8 rng=(reader tmp/skip.dat)");
+    reader_t *rng=rng_load("keep32 keep=16 rng=(reader tmp/keep32.dat)");
     uint8_t tmp[chunk+1];
 
-    for (i=0; i<nn-chunk; i += chunk) {
+    for (i=0; i<nn-4-chunk; i += chunk) {
       int j;
       int got =reader_read(rng,tmp,chunk);
       if (got != chunk) {
@@ -70,8 +68,8 @@ void test_skip1()
 
 int main()
 {
-  test_skip0();
-  test_skip1();
+  test_keep0();
+  test_keep1();
   printf("ok\n");
   return 0;
 }
