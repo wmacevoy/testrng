@@ -6,6 +6,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef LITTLE_ENDIAN
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define LITTLE_ENDIAN
+#endif
+#endif
+
+#ifdef LITTLE_ENDIAN
+#include <byteswap.h>
+#endif
+
 typedef struct
 {
   reader_t base;
@@ -25,7 +35,7 @@ static ssize_t rng_keep32_read(reader_t *me, uint8_t *buffer, size_t size) {
       if (ME->rng->read(ME->rng,(uint8_t*)&in,4) != 4) {
 	return ans;
       }
-#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef LITTLE_ENDIAN
       in=__bswap_32 (in);
 #endif
       ME->out = (ME->out << (ME->keep)) | (in&((~((uint32_t)0))>>(32-(ME->keep))));
@@ -33,7 +43,7 @@ static ssize_t rng_keep32_read(reader_t *me, uint8_t *buffer, size_t size) {
     }
     if (size >= 4 && ME->bits >= 32) {
       uint32_t o32 = (ME->out >> (ME->bits-32));
-#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef LITTLE_ENDIAN
       o32=__bswap_32 (o32);
 #endif
       *(uint32_t*)buffer = o32;

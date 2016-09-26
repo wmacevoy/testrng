@@ -4,6 +4,12 @@
 #include <inttypes.h>
 #include <string.h>
 #ifndef LITTLE_ENDIAN
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define LITTLE_ENDIAN
+#endif
+#endif
+
+#ifndef LITTLE_ENDIAN
 #include <byteswap.h>
 #endif
 
@@ -32,14 +38,14 @@ void ascii() {
   for (;;) {
     if (getline(&line,&n,stdin) < 0) break;
     if (sscanf(line,"%" SCNu32 ,&in) == 1) {
-#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef LITTLE_ENDIAN
       in=__bswap_32 (in);
 #endif
       out = (out << BITS) | (in&((~((uint32_t)0))>>(32-BITS)));
       bits += BITS;
       if (bits >= 32) {
         uint32_t o32 = (out >> (bits-32));
-#if defined(BIG_ENDIAN) || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef LITTLE_ENDIAN
         o32=__bswap_32 (o32);
 #endif
         write(1,&o32,4);
