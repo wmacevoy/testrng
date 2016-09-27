@@ -1,0 +1,173 @@
+#!/bin/bash
+
+trap "exit" INT
+
+good_tests() {
+  dieharder -l | grep Good | sed 's/^ *-d 0*\([0-9][0-9]*\).*$/\1/' | sort -n
+}
+
+plain_rngs() {
+  (dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f2; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f3; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f4) | sort | egrep -v '(200|201|202|207)' | sed 's/^ *0*\([0-9]*[0-9]\).*$/\1/'
+}
+
+completed() {
+  ok=no
+  if [ -f "$1" ] ; then
+    if [ "$(wc -l "$log" | sed -e 's/[^0-9]*\([0-9]*\).*/\1/')" -eq 9 ] ; then
+      if [ "$(wc -w "$log" | sed -e 's/[^0-9]*\([0-9]*\).*/\1/')" -ge 32 ] ; then
+        ok=yes
+      fi
+    fi
+  fi
+  if [ "$verbose" = "yes" ] ; then
+    echo "completed $1: $ok" 1>&2
+  fi
+
+  test "$ok" = "yes"
+}
+
+seed_from_log() {
+  if completed "$1" ; then
+    value=$(grep -C 1 Seed "$1" | tail -1 | cut -d"|" -f 3 | sed -e 's/^ *\([^ ]*\) *$/\1/')
+    if [ "$verbose" = "yes" ] ; then
+      echo "seed $value" 1>&2
+    fi
+    echo $value
+  else
+    if [ "$verbose" = "yes" ] ; then
+      echo "seed new"    1>&2
+    fi
+  fi
+}
+
+rng_from_log() {
+  value=$(basename "$1" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\1/')
+  echo "rng $value" 1>&2
+  echo $value
+}
+
+test_from_log() {
+  value=$(basename "$1" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\2/')
+  if [ "$verbose" = "yes" ] ; then
+    echo "test $value" 1>&2
+  fi
+  echo $value
+}
+
+cleanup() {
+  if [ -f "$1" ] ; then
+    if ! completed "$1" ; then
+      if [ "$verbose" = "yes" ] ; then
+         echo removing incomplete log "$1"
+      fi
+      /bin/rm -rf "$1"
+    fi
+  fi
+}
+
+rerun() {
+  S=$(seed_from_log "$1")
+  g=$(rng_from_log "$1")
+  t=$(test_from_log "$1")
+
+  if [ "$verbose" = "yes" ] ; then
+     if [ $S = "" ] ; then
+       echo nice time dieharder -g $g -t $t 1 "| tee $1" >&2
+     else
+       echo nice time dieharder -S $S -g $g -t $t 1>&2
+     fi
+  fi
+  if [ $S = "" ] ; then
+    /bin/rm -rf "$1"
+    dir="$(dirname "$1")"
+    if [ ! -d "$dir" ] ; then
+      if [ "$verbose" = "yes" ] ; then
+        echo making directory "$dir" 1>&2
+      fi
+      mkdir -p "$dir"
+    fi
+    nice time dieharder -g $g -t $t | tee "$1"
+  else
+    nice time dieharder -S $S -g $g -t $t 
+  fi
+}
+
+cmd() {
+  if [ "$TESTS" = "" -o "$TESTS" = "all" ] ; then
+     TESTS="$(good_tests)"
+  fi
+  if [ "$RNGS" = "" -o "$RNGS" = "all" ] ; then
+     RNGS="$(plain_rngs)"
+  fi
+  if [ "$COUNTS" = "" -o "$COUNTS" = "all" ] ; then
+     COUNTS=$(seq 0 9)
+  fi
+
+  if [ "$verbose" = "yes" ] ; then
+    echo "tests: $TESTS" 1>&2
+    echo "rngs: $RNGS" 1>&2
+    echo "counts: $COUNTS" 1>&2
+    echo "command: " "$@" 1>&2
+  fi
+
+  for t in $TESTS ; do
+    for g in $RNGS ; do
+      for c in $COUNTS; do
+        padg=$(printf %03d $g)
+        padt=$(printf %03d $t)
+        log="dh/dh-$padg-$padt-$c.log"
+        "$@" "$log"
+      done
+    done
+  done
+}
+
+TESTS=""
+RNGS=""
+COUNTS=""
+COMMANDS=""
+
+verbose=no
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+  -g) if [ "$2" = "all" ] ; then 
+        RNGS="$(plain_rngs)"
+      else
+        RNGS="$RNGS $2"
+      fi
+      shift 2;;
+  -d) if [ "$2" = "all" ] ; then
+        TESTS="$(good_tests)"
+      else
+        TESTS="$TESTS $2"
+      fi
+      shift 2;;
+  -c) if [ "$2" = "all" ] ; then
+        COUNTS="$(seq 0 9)"
+      else
+        COUNTS="$COUNTS $2"
+      fi
+      shift 2;;
+  -v) verbose=yes
+      shift;;
+
+  rngs)  plain_rngs; COMMANDS="$COMMANDS nop"; shift;;
+  tests) good_tests; COMMANDS="$COMMANDS nop"; shift;;
+  clean) COMMANDS="$COMMANDS cleanup"; shift;;
+  run)   COMMANDS="$COMMANDS rerun"; shift;;
+  *)     echo "Unknown arg $1"; shift;;
+  esac
+done
+
+if [ "$COMMANDS" = "" ] ; then
+  COMMANDS="rerun"
+fi
+
+
+for command in $COMMANDS
+do
+  if [ "$command" != "nop" ] ; then
+    cmd $command
+  fi
+done
