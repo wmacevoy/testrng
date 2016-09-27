@@ -42,7 +42,9 @@ seed_from_log() {
 
 rng_from_log() {
   value=$(basename "$1" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\1/')
-  echo "rng $value" 1>&2
+  if [ "$verbose" = "yes" ] ; then
+    echo "rng $value" 1>&2
+  fi
   echo $value
 }
 
@@ -68,16 +70,16 @@ cleanup() {
 rerun() {
   S=$(seed_from_log "$1")
   g=$(rng_from_log "$1")
-  t=$(test_from_log "$1")
+  d=$(test_from_log "$1")
 
   if [ "$verbose" = "yes" ] ; then
-     if [ $S = "" ] ; then
-       echo nice time dieharder -g $g -t $t 1 "| tee $1" >&2
+     if [ "$S" = "" ] ; then
+       echo nice time dieharder -g $g -d $d "| tee $1" 1>&2
      else
-       echo nice time dieharder -S $S -g $g -t $t 1>&2
+       echo nice time dieharder -S $S -g $g -d $d 1>&2
      fi
   fi
-  if [ $S = "" ] ; then
+  if [ "$S" = "" ] ; then
     /bin/rm -rf "$1"
     dir="$(dirname "$1")"
     if [ ! -d "$dir" ] ; then
@@ -86,10 +88,16 @@ rerun() {
       fi
       mkdir -p "$dir"
     fi
-    nice time dieharder -g $g -t $t | tee "$1"
+    nice time dieharder -g $g -d $d | tee "$1"
   else
-    nice time dieharder -S $S -g $g -t $t 
+    nice time dieharder -S $S -g $g -d $d 
   fi
+}
+
+run() {
+    if ! completed "$1" ; then
+      rerun "$1"
+    fi
 }
 
 cmd() {
@@ -155,13 +163,14 @@ while [ $# -gt 0 ] ; do
   rngs)  plain_rngs; COMMANDS="$COMMANDS nop"; shift;;
   tests) good_tests; COMMANDS="$COMMANDS nop"; shift;;
   clean) COMMANDS="$COMMANDS cleanup"; shift;;
-  run)   COMMANDS="$COMMANDS rerun"; shift;;
+  run)   COMMANDS="$COMMANDS run"; shift;;
+  rerun)   COMMANDS="$COMMANDS rerun"; shift;;
   *)     echo "Unknown arg $1"; shift;;
   esac
 done
 
 if [ "$COMMANDS" = "" ] ; then
-  COMMANDS="rerun"
+  COMMANDS="run"
 fi
 
 
