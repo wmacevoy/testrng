@@ -1,0 +1,21 @@
+#!/bin/bash
+
+source src/dieharder-common
+
+for g in $(plain_rngs)
+do
+  for t in $(good_tests)
+  do
+    for c in $(seq 0 9)
+    do
+      log=$(printf dh/dh-%03d-%03d-%d.log $g $t $c)
+      S=$(Seed_from_log "$log")
+      if [ "$S" != "missing" -a "$S" != "" ]
+      then
+        dir="dieharder/t$t/g$g"
+        mkdir -p "$dir"
+        cp "$log" "$dir/t$tg$gS$S.log"
+      fi
+    done
+  done
+done
