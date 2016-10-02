@@ -1,0 +1,199 @@
+good_tests() {
+  dieharder -l | grep Good | sed 's/^ *-d 0*\([0-9][0-9]*\).*$/\1/' | sort -n
+}
+
+plain_rngs() {
+  (dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f2; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f3; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f4) | sort | egrep -v '(200|201|202|207|500|501)' | sed 's/^ *0*\([0-9]*[0-9]\).*$/\1/'
+}
+
+headers() {
+  echo rng_id rng_name test_id test_name count Seed ntup tsamples p-values Assessment
+}
+
+completed() {
+  ok=no
+  if [ -f "$1" ] ; then
+    if [ "$(wc -l "$log" | sed -e 's/[^0-9]*\([0-9]*\).*/\1/')" -eq 9 ] ; then
+      if [ "$(wc -w "$log" | sed -e 's/[^0-9]*\([0-9]*\).*/\1/')" -ge 32 ] ; then
+        ok=yes
+      fi
+    fi
+  fi
+  if [ "$verbose" = "yes" ] ; then
+    echo "completed $1: $ok" 1>&2
+  fi
+
+  test "$ok" = "yes"
+}
+
+rows_from_log() {
+  complete="yes"
+  if ! completed "$log" ; then
+    echo 0;
+    return;
+  fi
+}
+
+values_from_log() {
+  header="no"
+  count="no"
+  append=""
+  log=""
+
+  while [ $# -gt 0 ] ; do
+    case "$1" in
+    --count) count="yes"; shift;;
+    --header) header="yes"; shift;;
+    --append) append="$2"; shift 2;;
+    --log) log="$2"; shift 2;;
+    --) shift; break;;
+    *) break;
+    esac
+  done
+
+  complete="yes"
+  if ! completed "$log" ; then
+    complete="no"
+  fi
+
+  names=""
+  values=""
+  
+  first=yes
+  while [ $# -gt 0 ] ; do
+    name="$1"
+    value=""
+    case "$name" in
+    rng_id)
+      value=$(basename "$log" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\1/');;
+    test_id)
+      value=$(basename "$log" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\2/');;
+    count)
+      value=$(basename "$log" | sed -e 's/.*-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\)-0*\([0-9][0-9]*\).log$/\3/');;
+    *)
+      if [ "$complete" = "no" ] ; then
+         value="missing"
+      else 
+        head=$(grep -v '#===' "$log" |  grep -C 0 "$name" | tail -1)
+        data=$(grep -v '#===' "$log" |  grep -C 1 "$name" | tail -1)
+        tmp="${head%$name.*}"
+        tmp="${tmp//[^|]}"
+        tmp=${#tmp}
+        tmp=$(($tmp+1))
+        value=$(echo $data | cut -d"|" -f "$tmp")
+      fi
+      ;;
+    esac
+    if [ "$first" = "yes" ] ; then
+      first=no
+    else
+      names="$names,"
+      values="$values,"
+    fi
+    names="$names$name"
+    values="$values$value"
+    shift
+  done
+
+  if [ "$header" = "yes" ] ; then
+    values="$names"
+  fi
+
+  if [ "$verbose" = "yes" ] ; then
+    echo $values 1>&2
+  fi
+  if [ "$append" != "" ] ; then
+    echo $values >> "$append"
+  else
+    echo $values
+  fi
+}
+
+rng_id_from_log() {
+  values_from_log --log "$@" rng_id 
+}
+
+rng_name_from_log() {
+  values_from_log --log "$@" rng_name
+}
+
+test_id_from_log() {
+  values_from_log --log "$@" test_id 
+}
+
+test_name_from_log() {
+  values_from_log --log "$@" test_name
+}
+
+count_from_log() {
+  values_from_log --log "$@" count
+}
+
+Seed_from_log() {
+  values_from_log --log "$@" Seed
+}
+
+rerun() {
+  Sgd=$(values_from_log --log "$1" Seed rng_id test_id)
+  S=$(echo $Sgd | cut -d, -f1);
+  g=$(echo $Sgd | cut -d, -f2);
+  d=$(echo $Sgd | cut -d, -f3);
+
+  if [ "$verbose" = "yes" ] ; then
+     if [ "$S" = "missing" ] ; then
+       echo nice time dieharder -g $g -d $d "| tee $1" 1>&2
+     else
+       echo nice time dieharder -S $S -g $g -d $d 1>&2
+     fi
+  fi
+  if [ "$S" = "missing" ] ; then
+    /bin/rm -rf "$1"
+    dir="$(dirname "$1")"
+    if [ ! -d "$dir" ] ; then
+      if [ "$verbose" = "yes" ] ; then
+        echo making directory "$dir" 1>&2
+      fi
+      mkdir -p "$dir"
+    fi
+    nice time dieharder -g $g -d $d | tee "$1"
+  else
+    nice time dieharder -S $S -g $g -d $d 
+  fi
+}
+
+run() {
+    if ! completed "$1" ; then
+      rerun "$1"
+    fi
+}
+
+
+cmd() {
+  if [ "$TESTS" = "" -o "$TESTS" = "all" ] ; then
+     TESTS="$(good_tests)"
+  fi
+  if [ "$RNGS" = "" -o "$RNGS" = "all" ] ; then
+     RNGS="$(plain_rngs)"
+  fi
+  if [ "$COUNTS" = "" -o "$COUNTS" = "all" ] ; then
+     COUNTS=$(seq 0 9)
+  fi
+
+  if [ "$verbose" = "yes" ] ; then
+    echo "tests: $TESTS" 1>&2
+    echo "rngs: $RNGS" 1>&2
+    echo "counts: $COUNTS" 1>&2
+    echo "command: " "$@" 1>&2
+  fi
+
+  for t in $TESTS ; do
+    for g in $RNGS ; do
+      for c in $COUNTS; do
+        padg=$(printf %03d $g)
+        padt=$(printf %03d $t)
+        log="dh/dh-$padg-$padt-$c.log"
+        "$@" "$log"
+      done
+    done
+  done
+}

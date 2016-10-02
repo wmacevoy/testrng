@@ -1,0 +1,29 @@
+#!/bin/bash
+
+trap "exit" INT
+
+source src/dieharder-common
+
+csv_first="yes"
+csv_headers=""
+csv_file=""
+csv() {
+    if [ "$csv_first" = "yes" ] ; then
+      csv_first="no"
+      csv_headers=$(headers)
+      values_from_log --log "$1" --append "$csv_file" --header -- $csv_headers
+    fi
+    if completed "$1" ; then
+      values_from_log --log "$1" --append "$csv_file" -- $csv_headers
+    fi
+}
+
+HEADERS=$(headers)
+echo $HEADERS | sed -e 's/ /,/g'
+TESTS="0"
+RNGS="3"
+COUNTS="7"
+verbose=yes
+cmd csv
+
+

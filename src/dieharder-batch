@@ -7,7 +7,7 @@ good_tests() {
 }
 
 plain_rngs() {
-  (dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f2; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f3; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f4) | sort | egrep -v '(200|201|202|207)' | sed 's/^ *0*\([0-9]*[0-9]\).*$/\1/'
+  (dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f2; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f3; dieharder -g -1 | grep -v ==== | grep -v \# | sed 's/ *| */,/g' | cut -d, -f4) | sort | egrep -v '(200|201|202|207|500|501)' | sed 's/^ *0*\([0-9]*[0-9]\).*$/\1/'
 }
 
 completed() {
@@ -35,7 +35,21 @@ seed_from_log() {
     echo $value
   else
     if [ "$verbose" = "yes" ] ; then
-      echo "seed new"    1>&2
+      echo "seed null"    1>&2
+    fi
+  fi
+}
+
+rng_name_from_log() {
+  if completed "$1" ; then
+    value=$(grep -C 1 rng_name "$1" | tail -1 | cut -d"|" -f 1 | sed -e 's/^ *\([^ ]*\) *$/\1/')
+    if [ "$verbose" = "yes" ] ; then
+      echo "rng_name $value" 1>&2
+    fi
+    echo $value
+  else
+    if [ "$verbose" = "yes" ] ; then
+      echo "rng_name null"    1>&2
     fi
   fi
 }
