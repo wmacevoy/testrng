@@ -108,6 +108,8 @@ There is a script file with a `.sh` extention which should reproduce the output.
 
 These results are in the public domain.
 
-If you use this work please refer to the resource so others mighttake advantage of it.
+If you use this work please refer to the resource so others might
+take advantage of it.
+
 
 
