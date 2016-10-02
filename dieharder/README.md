@@ -91,7 +91,7 @@ These are generally listed by `dieharder -l`.  Only tests marked as good are rep
 The directory structure is
 
 ```bash
-HERE/d<dieharder test>/g<rng generator>/d<test>_g<generator>_S<seed>.log
+HERE/d<test>/g<generator>/d<test>_g<generator>_S<seed>.log
 ```
 
 The dieharder tests ids and random generator ids are zero-padded in the names so they list in numerical order.
