@@ -70,7 +70,7 @@ These are generally listed by `dieharder -l`.  Only tests marked as good are rep
 |      -d 11|Diehard Minimum Distance (2d Circle) Test|  Good  |
 |      -d 12|Diehard 3d Sphere (Minimum Distance) Test|  Good  |
 |      -d 13|             Diehard Squeeze Test|    Good        |
-|<del>-d 14</del>|<del>Diehard Sums Test</del>|<del>D Not Use</del>|
+|<del>-d 14</del>|<del>Diehard Sums Test</del>|<del>Do Not Use</del>|
 |      -d 15|                Diehard Runs Test|	   Good        |
 |      -d 16|               Diehard Craps Test|    Good        |
 |      -d 17|     Marsaglia and Tsang GCD Test|    Good        |
@@ -91,8 +91,10 @@ These are generally listed by `dieharder -l`.  Only tests marked as good are rep
 The directory structure is
 
 ```bash
-HERE/d<dieharder test>/g<rng generator>/S<rng seed>.log
+HERE/d<dieharder test>/g<rng generator>/d<test>_r<seed>_S<rng seed>.log
 ```
+
+The tests and seeds are 0-padded so they list in numerical order.
 
 The output is the result of
 
