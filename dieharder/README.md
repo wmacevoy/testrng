@@ -94,7 +94,7 @@ The directory structure is
 HERE/d<dieharder test>/g<rng generator>/d<test>_r<seed>_S<rng seed>.log
 ```
 
-The tests and seeds are 0-padded so they list in numerical order.
+The dieharder tests ids and random generator ids are zero-padded in the names so they list in numerical order.
 
 The output is the result of
 
