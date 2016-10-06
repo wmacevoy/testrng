@@ -1,0 +1,2 @@
+#!/bin/bash
+dieharder -d 203 -g 50 -S 1377652438
