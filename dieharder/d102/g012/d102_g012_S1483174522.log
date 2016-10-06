@@ -1,0 +1,38 @@
+#=============================================================================#
+#            dieharder version 3.31.1 Copyright 2003 Robert G. Brown          #
+#=============================================================================#
+   rng_name    |rands/second|   Seed   |
+            mrg|  4.79e+07  |1483174522|
+#=============================================================================#
+        test_name   |ntup| tsamples |psamples|  p-value |Assessment
+#=============================================================================#
+          sts_serial|   1|    100000|     100|0.19240062|  PASSED  
+          sts_serial|   2|    100000|     100|0.99067573|  PASSED  
+          sts_serial|   3|    100000|     100|0.21796567|  PASSED  
+          sts_serial|   3|    100000|     100|0.06857653|  PASSED  
+          sts_serial|   4|    100000|     100|0.48886562|  PASSED  
+          sts_serial|   4|    100000|     100|0.37309133|  PASSED  
+          sts_serial|   5|    100000|     100|0.81420106|  PASSED  
+          sts_serial|   5|    100000|     100|0.51395199|  PASSED  
+          sts_serial|   6|    100000|     100|0.62132216|  PASSED  
+          sts_serial|   6|    100000|     100|0.96922557|  PASSED  
+          sts_serial|   7|    100000|     100|0.42174217|  PASSED  
+          sts_serial|   7|    100000|     100|0.42789361|  PASSED  
+          sts_serial|   8|    100000|     100|0.12675740|  PASSED  
+          sts_serial|   8|    100000|     100|0.37963279|  PASSED  
+          sts_serial|   9|    100000|     100|0.83426919|  PASSED  
+          sts_serial|   9|    100000|     100|0.55949628|  PASSED  
+          sts_serial|  10|    100000|     100|0.92600133|  PASSED  
+          sts_serial|  10|    100000|     100|0.41675045|  PASSED  
+          sts_serial|  11|    100000|     100|0.43154133|  PASSED  
+          sts_serial|  11|    100000|     100|0.97599360|  PASSED  
+          sts_serial|  12|    100000|     100|0.08134743|  PASSED  
+          sts_serial|  12|    100000|     100|0.00460307|   WEAK   
+          sts_serial|  13|    100000|     100|0.77032982|  PASSED  
+          sts_serial|  13|    100000|     100|0.55855403|  PASSED  
+          sts_serial|  14|    100000|     100|0.86636676|  PASSED  
+          sts_serial|  14|    100000|     100|0.45180864|  PASSED  
+          sts_serial|  15|    100000|     100|0.75561305|  PASSED  
+          sts_serial|  15|    100000|     100|0.89603582|  PASSED  
+          sts_serial|  16|    100000|     100|0.55328970|  PASSED  
+          sts_serial|  16|    100000|     100|0.18676480|  PASSED  
