@@ -216,3 +216,6 @@ bug:
 	echo "should not fail..."
 	bin/testrng 	--rng "rdrand" \
 			--stats "repeat samples=1e7 after=100 limit=3 progress=100000 stats=(max64 samples=19 use0=32 skip0=0 use1=32 skip1=0 offset=0)"
+
+dieharder-batch-run:
+	nohup src/dieharder-batch run >>tmp/dieharder-batch.log &
