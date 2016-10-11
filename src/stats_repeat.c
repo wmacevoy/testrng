@@ -13,6 +13,7 @@ typedef struct stats_repeat {
   double samples;
   double sample;
   double limit;
+  double after;
   double progress;
   stats_t *stats;
   double zl;
@@ -31,6 +32,7 @@ enum DoubleIndexes {
   DISamples,
   DISample,
   DILimit,
+  DIAfter,
   DIProgress,
   DILuck,
   DIZLuck,
@@ -74,8 +76,8 @@ static char *config(stats_t *me) {
   char *stats_name = stats_get_string_by_name(ME->stats,"name");
   char *stats_config = stats_get_string_by_name(ME->stats,"config");
   snprintf(tmp,sizeof(tmp),
-           "samples=%lg limit=%lg progress=%lg stats=(%s %s)",
-           ME->samples,ME->limit,ME->progress,
+           "samples=%lg limit=%lg after=%lg progress=%lg stats=(%s %s)",
+           ME->samples,ME->limit,ME->after,ME->progress,
            stats_name,stats_config);
 
   free(stats_name);
@@ -100,6 +102,7 @@ static int stats_repeat_get_double_index(stats_t *me, const char *name) {
   if (strcmp(name,"samples")==0) { return DISamples; }
   if (strcmp(name,"sample")==0) { return DISample; }
   if (strcmp(name,"limit")==0) { return DILimit; }
+  if (strcmp(name,"after")==0) { return DIAfter; }
   if (strcmp(name,"progress")==0) { return DIProgress; }
   if (strcmp(name,"luck")==0) { return DILuck; }
   if (strcmp(name,"nluck")==0) { return DINLuck; }
@@ -121,6 +124,7 @@ static double stats_repeat_get_double(stats_t *me, int index) {
   case DISamples: return ME->samples;
   case DISample: return ME->sample;
   case DILimit: return ME->limit;
+  case DIAfter: return ME->after;
   case DIProgress: return ME->progress;
   case DIZLuck: return ME->zl;
   case DILuck: return luck(me);
@@ -134,6 +138,7 @@ static int stats_repeat_set_double(stats_t *me, int index, double value) {
   switch(index) {
   case DISamples: ME->samples=value; return 1;
   case DILimit: ME->limit=value; return 1;
+  case DIAfter: ME->after=value; return 1;
   case DIProgress: ME->progress=value; return 1;
   }
   return 0;
@@ -189,8 +194,10 @@ static void stats_repeat_run(stats_t *me, reader_t *src) {
                ME->sample,ME->zl,ME->df);
       }
     }
-    if (!isnan(ME->limit) && (fabs(ME->zl) >= fabs(ME->limit))) {
-      break;
+    if (isnan(ME->after) || (ME->sample >= ME->after)) {
+      if (!isnan(ME->limit) && (fabs(ME->zl) >= fabs(ME->limit))) {
+        break;
+      }
     }
   }
 }
@@ -211,6 +218,7 @@ stats_t* stats_repeat(const char *cfg)
   ME->zl=NAN;
   ME->df=0;
   ME->limit=10;
+  ME->after=1000;
   ME->progress=100000;
 
   ME->base.config = stats_repeat_config;
