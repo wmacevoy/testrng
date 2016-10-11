@@ -136,18 +136,19 @@ run : bin/testrng
 show_dieharder_rngs :
 	dieharder -g -1
 
-STATS0=--stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-STATS1=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
-STATS2=--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
-STATS=$(STATS2)
+STATS0= --stats "repeat samples=1e6 limit=10 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS1= --stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=24 skip0=8 use1=24 skip1=8 offset=0)"
+STATS2= --stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
+STATS3= --stats "repeat samples=1e7 after=100 limit=10 progress=100000 stats=(max64 samples=19 use0=24 skip0=0 use1=24 skip1=0 offset=0)"
+STATS=$(STATS3)
 
 RNG0=--rng rdrand
 
 
 GOOD=\
+	test-dh-AES_OFB \
 	test-rdrand \
-	test-urandom \
-	test-dh-AES_OFB
+	test-urandom
 
 POOR=\
 	test-dh-borosh13 \
@@ -156,11 +157,14 @@ POOR=\
 	test-dh-knuthran \
 	test-dh-ran3 \
 	test-dh-rand \
+	test-dh-r250 \
 	test-dh-ranlux \
 	test-dh-ranlux389 \
 	test-dh-ranlxs0 \
 	test-dh-ranlxs1 \
 	test-dh-ranlxs2 \
+	test-dh-random8-bsd \
+	test-dh-random8-glibc2 \
 	test-dh-ranmar \
 	test-dh-slatec \
 	test-dh-transputer \
@@ -181,6 +185,9 @@ test-urandom : libs bins
 	bin/testrng --rng "reader /dev/urandom" $(STATS)
 
 test-dh-% : libs bins
+	bin/testrng --rng "reader src/rng_dieharder $*|" $(STATS)
+
+test0-dh-% : libs bins
 	bin/testrng \
 		--rng "reader src/rng_dieharder $*|" \
 		--stats "repeat samples=1e7 limit=10 progress=100000 stats=(max64 samples=3 use0=21 skip0=3 use1=21 skip1=1 offset=0)"
@@ -201,4 +208,3 @@ dieharder-list-tests:
 
 dieharder-list-rngs:
 	dieharder -g -1
-
